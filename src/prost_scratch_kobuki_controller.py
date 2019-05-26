@@ -369,7 +369,7 @@ class OdomBaseController:
 						end.data = "move end"
 						self.pub_retrun_arrive.publish(end)
 		rospy.loginfo("Moving Finished")
-		#ラズパイ側自動git pull確認用コメント--その6
+		#ラズパイ側自動git pull確認用コメント--最終確認
 		#rospy.loginfo("---- %s" % motion.data)
 
 
