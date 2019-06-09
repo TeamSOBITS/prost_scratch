@@ -201,9 +201,6 @@ class OdomBaseController:
 				self.move_order_S = False
 				self.move_order_T = False
 				self.pub_twist.publish(Twist())#停止
-				#/odom初期化
-				reset_val = Empty()
-				self.pub_reset_odometry.publish(reset_val)
 				rospy.loginfo("stop flag True")
 				break
 			else:
@@ -415,6 +412,7 @@ class OdomBaseController:
 		#/odom初期化
 		reset_val = Empty()
 		self.pub_reset_odometry.publish(reset_val)
+		rospy.sleep(0.1)
 		rospy.loginfo("Moving Finished")
 		#ラズパイ側自動git pull確認用コメント--最終確認
 		#rospy.loginfo("---- %s" % motion.data)
