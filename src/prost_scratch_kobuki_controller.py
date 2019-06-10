@@ -6,7 +6,7 @@ import math
 import time
 from tf.transformations import euler_from_quaternion
 from geometry_msgs.msg import Pose, Point, Quaternion, Twist
-from std_msgs.msg import String
+from std_msgs.msg import String, Empty
 from nav_msgs.msg import Odometry
 
 import os
@@ -37,14 +37,17 @@ class OdomBaseController:
 		self.stlight_ki = 0.1			#積分係数
 
 		#ループ周期設定
-		self.sleep_vale = 0.03
-
-		#台形制御処理時間計測用
-		self.start = 0
+		self.sleep_vale = 0.030
 
 		#台形制御のグラフ描画用
 		self.graph_x = []
 		self.graph_y = []
+
+		#速度更新時間計測
+		self.start_measurement_time = 0
+		self.speed_update_time = 0
+		self.period_time = 0
+		self.speed_start_flag = False
 
 		#初期化
 		self.speed = 0
@@ -69,10 +72,11 @@ class OdomBaseController:
 
 		self.pub_twist = rospy.Publisher('/mobile_base/commands/velocity', Twist, queue_size=10)
 		self.pub_output_log = rospy.Publisher('/odom_base/output_log', String, queue_size=10)
-		self.sub_motion_stop = rospy.Subscriber('/motion_stop',String, self.motion_stop)
-
-		self.sub_odom_base_ctrl = rospy.Subscriber('/odom_base_ctrl',String, self.odom_base_ctrl)
+		self.pub_reset_odometry = rospy.Publisher('/mobile_base/commands/reset_odometry', Empty, queue_size=10)
 		self.pub_retrun_arrive = rospy.Publisher('/retrun_arrive', String, queue_size=10)
+
+		self.sub_motion_stop = rospy.Subscriber('/motion_stop',String, self.motion_stop)
+		self.sub_odom_base_ctrl = rospy.Subscriber('/odom_base_ctrl',String, self.odom_base_ctrl)
 
 		rospy.loginfo("odom_base_controller is OK.")
 
@@ -126,6 +130,7 @@ class OdomBaseController:
 				self.order_vale = self.Read_Value(motion)
 				self.move_order_T = True
 				rospy.loginfo("order: Trun: %f(deg)" % (self.order_vale))
+				#注意：描画するとループ周期が長くなる
 				#グラフ描画準備①
 				"""
 				title = str(self.order_vale)
@@ -165,12 +170,7 @@ class OdomBaseController:
 		self.before_pose_x = trans[0] * 100#[cm]
 		self.before_pose_y = trans[1] * 100#[cm]
 		self.before_angle = math.degrees(euler[2])#[deg]
-		rospy.loginfo("--初めのエンコーダ値: x:%f y:%f angle:%f", self.before_pose_x, self.before_pose_y, self.before_angle)
-
-		#デバッグようにプリント文入れる？
-		#処理時間計測開始
-		self.start = time.time()
-		#rospy.loginfo("開始時間%f[sec]",self.start)
+		rospy.loginfo("--開始地点のエンコーダ値: x:%f y:%f angle:%f", self.before_pose_x, self.before_pose_y, self.before_angle)
 
 		#グラフ描画準備②
 		"""
@@ -204,16 +204,6 @@ class OdomBaseController:
 				rospy.loginfo("stop flag True")
 				break
 			else:
-				(trans,rot) = self.listener.lookupTransform('/base_link', '/odom', rospy.Time(0))
-				euler = tf.transformations.euler_from_quaternion((rot[0],rot[1],rot[2],rot[3]))
-
-				#現在位置代入
-				self.current_pose_x = trans[0] * 100#[cm]
-				self.current_pose_y = trans[1] * 100#[cm]
-				self.current_angle = math.degrees(euler[2])#[deg]
-				#rospy.loginfo("-current- x: %f[cm] y: %f[cm] angle: %f[deg]",self.current_pose_x, self.current_pose_y, self.current_angle )
-				#rospy.loginfo("          order_vale: %f moved_vale: %f",self.order_vale , self.moved_vale)
-
 				#加速区間
 				if self.moved_vale < abs(self.order_vale) / 5:
 					self.speed += self.speed_acs
@@ -224,9 +214,9 @@ class OdomBaseController:
 						#PI制御
 						self.before_speed = self.speed	#前回パブリッシュした速度を保存
 						if self.speed > self.error_I:    #現在のスピードが積分係数より小さい時
-							self.error_P = (abs(self.order_vale) - self.moved_vale) / (abs(self.order_vale) / 5)  #指定した距離に対する現在走行距離の割合
-							self.speed = self.current_speed * self.error_P + self.error_I
-							self.error_I += (self.before_speed - self.speed)*self.ki
+							self.error_P = (abs(self.order_vale) - self.moved_vale) / (abs(self.order_vale) / 5)#小さくなる
+							self.speed = self.current_speed * self.error_P + self.error_I#小さくなる
+							self.error_I += (self.before_speed - self.speed)*self.ki#小さくなる
 							#print "error_T_I=%f" % self.error_T_I
 						elif self.speed <= self.error_I:
 							self.speed = self.error_I
@@ -255,10 +245,19 @@ class OdomBaseController:
 						send_cmd.angular.z = math.radians(-self.speed)
 					else:#時計回り
 						send_cmd.angular.z = math.radians(self.speed)
-
 					#rospy.loginfo("Turn send_cmd: %f"%(send_cmd.angular.z))
+
+					if self.speed_start_flag == True:
+						#速度更新周期算出
+						self.period_time = time.time() - self.speed_update_time
+						#rospy.loginfo("速度更新周期: %f[sec]"%(self.period_time))
 					if self.moved_vale < abs(self.order_vale):
 						self.pub_twist.publish(send_cmd)
+						#速度更新時間計測開始
+						self.speed_update_time = time.time()
+						if self.speed_start_flag == False:
+							self.start_measurement_time = time.time()
+							self.speed_start_flag = True
 						#グラフを表示
 						"""
 						elapsed_time = time.time() - self.start
@@ -271,23 +270,37 @@ class OdomBaseController:
 						ax.plot(self.graph_x, self.graph_y, marker="o", color = "red", linestyle = "--")
 						plt.pause(.01)
 						"""
+						#現在位置代入
+						(trans,rot) = self.listener.lookupTransform('/base_link', '/odom', rospy.Time(0))
+						euler = tf.transformations.euler_from_quaternion((rot[0],rot[1],rot[2],rot[3]))
+						self.current_pose_x = trans[0] * 100#[cm]
+						self.current_pose_y = trans[1] * 100#[cm]
+						self.current_angle = math.degrees(euler[2])#[deg]
+						#rospy.loginfo("-エンコーダ値- x: %f[cm] y: %f[cm] angle: %f[deg]",self.current_pose_x, self.current_pose_y, self.current_angle )
+						#rospy.loginfo("          order_vale: %f moved_vale: %f",self.order_vale , self.moved_vale)
 						#移動角度算出
-						sub_point = abs(self.current_angle - self.before_angle)#☆最後の測定量(before_angle)が間違っていた!//外乱（生徒がロボットを素手で動かす）
+						sub_point = abs(self.current_angle - self.before_angle)#例：開始角度350 終了角度10→移動角度20を算出する際使用//この処理がないと340が移動角度になる  ☆最後の測定量(before_angle)が間違っていた!//外乱（生徒がロボットを素手で動かす）
 						if sub_point > 180:
 							sub_point = abs(sub_point - 360)
 						self.moved_vale += sub_point#加算 ☆移動量が間違っていた
-						#rospy.loginfo("moved_vale:%f[deg]", self.moved_vale)
-						#rospy.loginfo(" ")
+						rospy.loginfo("現在の回転角度:%f[deg]", self.moved_vale)
+						rospy.loginfo(" ")
 						#開始地点保存
 						self.before_pose_x = self.current_pose_x
 						self.before_pose_y = self.current_pose_y
 						self.before_angle = self.current_angle
 					else:
+						self.period_time = time.time() - self.speed_update_time
+						#rospy.loginfo("速度更新周期: %f[sec]"%(self.period_time))
 						self.pub_twist.publish(Twist())#停止
-						elapsed_time = time.time() - self.start
-						print ("処理終了時間:"+ format(elapsed_time) + "[sec]")
+						all_time = time.time() - self.start_measurement_time
+						print(" ")
+						print ("総回転時間 :"+ str(all_time) + "[sec]")
+						print(" ")
 						#台形制御のグラフの保存
 						"""
+						elapsed_time = time.time() - self.start_time
+						print ("処理終了時間:"+ format(elapsed_time) + "[sec]")
 						self.graph_x.append(elapsed_time)
 						self.graph_y.append(0)
 						ax.plot(self.graph_x, self.graph_y, marker="o", color = "red", linestyle = "--")
@@ -304,23 +317,34 @@ class OdomBaseController:
 						self.error_P = 0
 						self.error_I = 0
 						self.move_order_T = False
+						self.speed_start_flag =  False
 						self.graph_x = []
 						self.graph_y = []
 						output_log = str(self.order_vale) + "_finished"
 						self.pub_output_log.publish(output_log)
-						rospy.loginfo("--終わりのエンコーダ値: x:%f y:%f angle:%f", self.before_pose_x,self.before_pose_y, self.before_angle)
 						#到着合図
 						end = String()
 						end.data = "move end"
 						self.pub_retrun_arrive.publish(end)
 				elif self.move_order_T == False and self.move_order_S == True:
 					if self.order_vale > 0:
-						send_cmd.linear.x = self.speed #cm
+						send_cmd.linear.x = self.speed #m/sec
 					else:
-						send_cmd.linear.x = -self.speed #cm
+						send_cmd.linear.x = -self.speed #m/sec
 					#rospy.loginfo("stlight send_cmd: %f"%(send_cmd.linear.x))
+
 					if self.moved_vale < abs(self.order_vale):
+						if self.speed_start_flag == True:
+							#速度更新周期算出
+							self.period_time = time.time() - self.speed_update_time
+							#rospy.loginfo("速度更新周期: %f[sec]"%(self.period_time))
+						#☆速度更新時間計測開始
 						self.pub_twist.publish(send_cmd)
+						self.speed_update_time = time.time()
+						if self.speed_start_flag == False:
+							self.start_measurement_time = time.time()
+							self.speed_start_flag = True
+
 						#グラフを表示
 						"""
 						elapsed_time = time.time() - self.start
@@ -333,17 +357,35 @@ class OdomBaseController:
 						ax.plot(self.graph_x, self.graph_y, marker="o", color = "blue", linestyle = "--")
 						plt.pause(.01)
 						"""
+
+						#現在位置代入
+						(trans,rot) = self.listener.lookupTransform('/base_link', '/odom', rospy.Time(0))
+						euler = tf.transformations.euler_from_quaternion((rot[0],rot[1],rot[2],rot[3]))
+						self.current_pose_x = trans[0] * 100#[cm]
+						self.current_pose_y = trans[1] * 100#[cm]
+						self.current_angle = math.degrees(euler[2])#[deg]
+						#rospy.loginfo("-エンコーダ値- x: %f[cm] y: %f[cm] angle: %f[deg]",self.current_pose_x, self.current_pose_y, self.current_angle )
+						#rospy.loginfo("          order_vale: %f moved_vale: %f",self.order_vale , self.moved_vale)
 						#移動距離算出
 						sub_x = self.before_pose_x - self.current_pose_x
 						sub_y = self.before_pose_y - self.current_pose_y
 						self.moved_vale = math.hypot(sub_x,sub_y)
-						#rospy.loginfo("//moved_vale: %f", self.moved_vale)
+						rospy.loginfo("現在の移動距離: %f[cm]", self.moved_vale)
+						rospy.loginfo(" ")
 					else:
+						self.period_time = time.time() - self.speed_update_time
+						#rospy.loginfo("速度更新周期: %f[sec]"%(self.period_time))
 						self.pub_twist.publish(Twist())#停止
+						#rospy.loginfo("速度更新周期: %f[sec]"%(self.period_time))
+						all_time = time.time() - self.start_measurement_time
+						print(" ")
+						print ("総移動時間:"+ str(all_time) + "[sec]")
+						print(" ")
+						#台形制御のグラフの保存
+						"""
 						elapsed_time = time.time() - self.start
 						print ("処理終了時間:"+ format(elapsed_time) + "[sec]")
 						#台形制御のグラフの保存
-						"""
 						self.graph_x.append(elapsed_time)
 						self.graph_y.append(0)
 						ax.plot(self.graph_x, self.graph_y, marker="o", color = "blue", linestyle = "--")
@@ -352,7 +394,6 @@ class OdomBaseController:
 						plt.savefig(os.path.join(os.path.abspath(".") + "/catkin_ws/src/prost_scratch/png/", "figure_" + file_name + ".png"))
 						plt.close(fig)
 						"""
-						#rospy.loginfo("finished")
 						self.speed = 0
 						self.current_speed = 0
 						self.order_vale = 0
@@ -362,13 +403,18 @@ class OdomBaseController:
 						self.graph_x = []
 						self.graph_y = []
 						self.move_order_S = False
+						self.speed_start_flag = False
 						output_log = str(self.order_vale) + "_finished"
-						rospy.loginfo("--終わりのエンコーダ値: x:%f y:%f angle:%f", self.before_pose_x,self.before_pose_y, self.before_angle)
 						#到着合図
 						end = String()
 						end.data = "move end"
 						self.pub_retrun_arrive.publish(end)
+		#/odom初期化
+		reset_val = Empty()
+		self.pub_reset_odometry.publish(reset_val)
+		rospy.sleep(0.1)
 		rospy.loginfo("Moving Finished")
+		#ラズパイ側自動git pull確認用コメント--最終確認
 		#rospy.loginfo("---- %s" % motion.data)
 
 
