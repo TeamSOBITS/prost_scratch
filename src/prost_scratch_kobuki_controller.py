@@ -409,7 +409,7 @@ class OdomBaseController:
 						end = String()
 						end.data = "move end"
 						self.pub_retrun_arrive.publish(end)
-		#/odom初期化
+		#/odom初期化#確認
 		reset_val = Empty()
 		self.pub_reset_odometry.publish(reset_val)
 		rospy.sleep(0.1)
