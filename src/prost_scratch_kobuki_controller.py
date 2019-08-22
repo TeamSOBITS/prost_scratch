@@ -112,7 +112,7 @@ class OdomBaseController:
 		return value
 
 	def motion_stop(self,data):
-		print("-- get stop flag")
+		#print("-- get stop flag")
 		self.stop_flag = True
 
 	def odom_base_ctrl(self,motion):
@@ -294,9 +294,9 @@ class OdomBaseController:
 						#rospy.loginfo("速度更新周期: %f[sec]"%(self.period_time))
 						self.pub_twist.publish(Twist())#停止
 						all_time = time.time() - self.start_measurement_time
-						print(" ")
-						print ("総回転時間 :"+ str(all_time) + "[sec]")
-						print(" ")
+						#print(" ")
+						#print ("総回転時間 :"+ str(all_time) + "[sec]")
+						#print(" ")
 						#台形制御のグラフの保存
 						"""
 						elapsed_time = time.time() - self.start_time
@@ -378,9 +378,9 @@ class OdomBaseController:
 						self.pub_twist.publish(Twist())#停止
 						#rospy.loginfo("速度更新周期: %f[sec]"%(self.period_time))
 						all_time = time.time() - self.start_measurement_time
-						print(" ")
-						print ("総移動時間:"+ str(all_time) + "[sec]")
-						print(" ")
+						#print(" ")
+						#print ("総移動時間:"+ str(all_time) + "[sec]")
+						#print(" ")
 						#台形制御のグラフの保存
 						"""
 						elapsed_time = time.time() - self.start

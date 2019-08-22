@@ -2,12 +2,19 @@
 # -*- coding: utf-8 -*-
 
 import rospy
-import roslib
-import math
-from std_msgs.msg import String,Bool,Int32,Int16,UInt8
+import cv2
+import zbar
+import PIL.Image
 import numpy as np
-from subprocess import Popen
+import tf
+import math
+from std_msgs.msg import String,UInt8,Empty
+from geometry_msgs.msg import Twist,Quaternion,PoseStamped
+from sensor_msgs.msg import LaserScan,Image
 from kobuki_msgs.msg import *
+from nav_msgs.msg import Odometry
+from cv_bridge import CvBridge, CvBridgeError
+
 
 class Scratch3Connector:
 
@@ -15,36 +22,43 @@ class Scratch3Connector:
 		rospy.init_node('scratch3_connector')
 		rospy.loginfo("Scratch3_Connector Started")
 
+		self.scanner = zbar.ImageScanner()
+		self.scanner.parse_config('enable')
+		self.bridge = CvBridge()
+
 		self.sub_scratch_ros = rospy.Subscriber("/scratch_ros", String, self.cb_scratch_ros)#scratchから受け取るメッセージ
 		self.pub_ros_scratch = rospy.Publisher('/ros_scratch', String, queue_size = 10)#scratchへ送るメッセージ
 
-		self.sub_client_count = rospy.Subscriber("/client_count", Int32, self.cb_client_count)#clientの数の保持
-		#rospy.Timer(rospy.Duration(1), self.ros_scratch_publisher)#常に情報をpubする
-
 		self.sub_bumper = rospy.Subscriber("/mobile_base/events/bumper", BumperEvent, self.bumper_state)
 		self.sub_button = rospy.Subscriber("/mobile_base/events/button", ButtonEvent, self.button_state)
-		self.sub_wifi_connect = rospy.Subscriber("/wifi_connect", Bool, self.cb_wifi_connect)
-		self.pub_led1 = rospy.Publisher('/mobile_base/commands/led1', Led, queue_size = 10)#LED1光らせる
-		self.pub_led2 = rospy.Publisher('/mobile_base/commands/led2', Led, queue_size = 10)#LED2光らせる
+		self.sub_xtion_scan = rospy.Subscriber('/scan',LaserScan, self.xtion_scan)
+		self.sub_odom = rospy.Subscriber('/odom',Odometry, self.cb_odom)
+		self.image_sub = rospy.Subscriber("/usb_cam/image_raw",Image,self.qr_recode)
+		self.sub_qr_position = rospy.Subscriber("/visp_auto_tracker/object_position", PoseStamped, self.transform_broadcaster_qr_position)
+		self.pub_led2 = rospy.Publisher('/mobile_base/commands/led2', Led, queue_size = 10)
 		self.pub_sound = rospy.Publisher('/mobile_base/commands/sound', Sound, queue_size = 10)
-		self.pub_stop_motion = rospy.Publisher('/motion_stop', String, queue_size = 10)
-
+		self.pub_twist = rospy.Publisher('/mobile_base/commands/velocity', Twist, queue_size = 10)
+		self.pub_reset_odometry = rospy.Publisher('/mobile_base/commands/reset_odometry', Empty, queue_size=10)
 		self.pub_odom_base_ctrl = rospy.Publisher('/odom_base_ctrl', String, queue_size = 10)
-		self.sub_retrun_arrive = rospy.Subscriber("/retrun_arrive", String, self.retrun_arrive)
 
-	def cb_wifi_connect(self, state):
-		if state.data == True:
-			self.pub_led1.publish(1)#on--green
-		else:
-			self.pub_led1.publish(3)#off--red
+		self.moving_speed = Twist()
+		self.listener = tf.TransformListener()
+		self.twenty_cm = 8
+		self.thirty_cm = 12
+		self.forty_cm = 16
+		self.fifty_cm = 22
+		self.sixty_cm = 26
+		self.seventy_cm = 28
+		self.eighty_cm = 34
+		self.ninety_cm = 38
+		self.hundred_cm =45
 
 
 	def cb_scratch_ros(self, msg):
 		self.get_msg = msg.data
-
 		if(self.get_msg.find('LED:') >= 0):
 			word = self.get_msg[4:len(self.get_msg)]
-			rospy.loginfo(word)
+			#rospy.loginfo(word)
 			if word == "off":
 				self.pub_led2.publish(0)
 			elif word == "green":
@@ -53,42 +67,132 @@ class Scratch3Connector:
 				self.pub_led2.publish(2)
 			elif word == "red":
 				self.pub_led2.publish(3)
-		elif(self.get_msg.find('S:') >= 0):
-			#self.odom_base_call(self.get_msg)
-			self.pub_odom_base_ctrl.publish(self.get_msg)
-			#self.pub_ros_scratch.publish('arrive')
-		elif(self.get_msg.find('T:') >= 0):
-			#self.odom_base_call(self.get_msg)
-			self.pub_odom_base_ctrl.publish(self.get_msg)
-			#self.pub_ros_scratch.publish('arrive')
 		elif(self.get_msg.find('sound:') >= 0):
 			word = self.get_msg[6:len(self.get_msg)]
 			self.pub_sound.publish(np.uint8(word))
+		elif(self.get_msg.find('S:') >= 0):
+			self.pub_odom_base_ctrl.publish(self.get_msg)
+		elif(self.get_msg.find('T:') >= 0):
+			self.pub_odom_base_ctrl.publish(self.get_msg)
+		elif(self.get_msg.find('move_speed:') >= 0):
+			word = self.get_msg[11:len(self.get_msg)]
+			self.moving_speed.linear.x = float(word) * 0.01
+			self.moving_speed.angular.z = 0.0
+			self.pub_twist.publish(self.moving_speed)
+		elif(self.get_msg.find('rotation_speed:') >= 0):
+			word = self.get_msg[15:len(self.get_msg)]
+			self.moving_speed.linear.x = 0.0
+			self.moving_speed.angular.z = math.radians(float(word))
+			self.pub_twist.publish(self.moving_speed)
 		elif(self.get_msg.find('motion_stop:') >= 0):
 			word = self.get_msg[12:len(self.get_msg)]
-			self.pub_stop_motion.publish(word)
+			self.moving_speed.linear.x = 0.0
+			self.moving_speed.angular.z = 0.0
+			self.pub_twist.publish(self.moving_speed)
+		elif(self.get_msg.find('odome_initialize') >= 0):
+			reset_val = Empty()
+			self.pub_reset_odometry.publish(reset_val)
 
-	def cb_client_count(self, data):
-		self.client_count = data.data
-		word = "client_count:" + str(self.client_count)
+	def xtion_scan(self, data):
+		array_middle_num  = len(data.ranges)/2
+		if "nan"==str(data.ranges[array_middle_num]):
+			word = "xtion_senser_distance:0.0"
+		else:
+			word = "xtion_senser_distance:" + str(data.ranges[array_middle_num])[0:3]
 		self.pub_ros_scratch.publish(word)
-		
-	def ros_scratch_publisher(self,event):	#常にscratch側にpubする(使ってない)
-		word = "client_count:" + str(self.client_count)
-		self.pub_ros_scratch.publish(word)
 
-	def retrun_arrive(self, ret_value):# TurtleBotの位置調整
-		self.pub_ros_scratch.publish('arrive')
+	def cb_odom(self, data):
+		robo_pose_x = data.pose.pose.position.x
+		robo_pose_y = data.pose.pose.position.y
+		euler = tf.transformations.euler_from_quaternion((data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w))
+		robo_rad = euler[2]
+		robo_deg = math.degrees(robo_rad)
 
-	def odom_base_call(self, str_x):# TurtleBotの位置調整
-		rospy.wait_for_service('odom_base_ctrl')
-		print "sending it."
+		robo_pose_x_word = "robot_pose_x:" + str(robo_pose_x)
+		robo_pose_y_word = "robot_pose_y:" + str(robo_pose_y)
+		robo_angle_word = "robot_angle:" + str(robo_deg)
+
+		self.pub_ros_scratch.publish(robo_pose_x_word)
+		self.pub_ros_scratch.publish(robo_pose_y_word)
+		self.pub_ros_scratch.publish(robo_angle_word)
+
+	def transform_broadcaster_qr_position(self, data):
+		euler = tf.transformations.euler_from_quaternion((data.pose.orientation.x, data.pose.orientation.y, data.pose.orientation.z, data.pose.orientation.w))
+
+		temp_x = data.pose.position.x * -1
+		temp_y = data.pose.position.y * -1
+
+		br = tf.TransformBroadcaster()
+		br.sendTransform((data.pose.position.z,temp_x, temp_y),
+                     tf.transformations.quaternion_from_euler(euler[0], euler[1], euler[2]),
+                     rospy.Time.now(),
+                     "/qr_code",
+                     "/cam_rgb_link")
+
+
+		get_qr_distance = data.pose.position.z * 100
+		if get_qr_distance == 0:
+			qr_distance = 0
+		elif get_qr_distance < self.twenty_cm:
+			qr_distance = 20
+		elif get_qr_distance < self.thirty_cm:
+			qr_distance = 30
+		elif get_qr_distance < self.forty_cm:
+			qr_distance = 40
+		elif get_qr_distance < self.fifty_cm:
+			qr_distance = 50
+		elif get_qr_distance < self.sixty_cm:
+			qr_distance = 60
+		elif get_qr_distance < self.seventy_cm:
+			qr_distance = 70
+		elif get_qr_distance < self.eighty_cm:
+			qr_distance = 80
+		elif get_qr_distance < self.ninety_cm:
+			qr_distance = 90
+		elif get_qr_distance < self.hundred_cm:
+			qr_distance = 100
+		else:
+			qr_distance = 0
+
+		qr_angle = math.degrees(euler[1])
+
+		qr_distance_word = "qr_distance:" + str(qr_distance)
+		qr_angle_word = "qr_angle:" + str(qr_angle)
+
+		self.pub_ros_scratch.publish(qr_distance_word)
+		self.pub_ros_scratch.publish(qr_angle_word)
+
+
+
+	def qr_recode(self,data):
 		try:
-			service_name = rospy.ServiceProxy('odom_base_ctrl', odom_base)
-			resp = service_name(str_x)
-			return resp.res_str
-		except rospy.ServiceException, e:
-			print "Service call failed: %s"%e
+		    cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+		except CvBridgeError as e:
+		    print(e)
+		#input image
+		img = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+
+		#grayscale
+		img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+		#Binarization
+		tresh = 100
+		max_pixel = 255
+		ret, img = cv2.threshold(img, tresh, max_pixel, cv2.THRESH_BINARY)
+
+		#picture change PIL
+		pil_img = PIL.Image.fromarray(img)
+		width, height = pil_img.size
+		raw = pil_img.tobytes()
+		image = zbar.Image(width, height, 'Y800', raw)
+
+		#result
+		self.scanner.scan(image)
+		for symbol in image:
+			word = "qr_recode:" + str(symbol.data)
+			self.pub_ros_scratch.publish(String(word))
+
+
 
 	def bumper_state(self, data):
 		word = String()
@@ -135,6 +239,8 @@ class Scratch3Connector:
 			elif(2 == data.button):
 				word.data = 'button_2:true'
 				self.pub_ros_scratch.publish(word)
+
+
 
 if __name__ == '__main__':
 	sc = Scratch3Connector()
