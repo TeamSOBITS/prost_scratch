@@ -34,7 +34,7 @@ class Scratch3Connector:
 		self.sub_xtion_scan = rospy.Subscriber('/scan',LaserScan, self.xtion_scan)
 		self.image_sub = rospy.Subscriber("/usb_cam/image_raw",Image,self.qr_recode)
 		self.sub_wifi_connect = rospy.Subscriber("/wifi_connect", Bool, self.cb_wifi_connect)
-		self.sub_qr_position = rospy.Subscriber("/visp_auto_tracker/object_position", PoseStamped, self.transform_broadcaster_qr_position)
+		self.sub_qr_position = rospy.Subscriber("/visp_auto_tracker/object_position", PoseStamped, self.qr_position)
 		self.pub_led1 = rospy.Publisher('/mobile_base/commands/led1', Led, queue_size = 10)
 		self.pub_led2 = rospy.Publisher('/mobile_base/commands/led2', Led, queue_size = 10)
 		self.pub_sound = rospy.Publisher('/mobile_base/commands/sound', Sound, queue_size = 10)
@@ -53,6 +53,8 @@ class Scratch3Connector:
 		self.eighty_cm = 34
 		self.ninety_cm = 38
 		self.hundred_cm =45
+		self.save_qr_distance = 0
+		self.save_qr_angle = 0
 
 
 	def cb_wifi_connect(self, state):
@@ -108,23 +110,23 @@ class Scratch3Connector:
 			word = "xtion_senser_distance:" + str(data.ranges[array_middle_num])[0:3]
 		self.pub_ros_scratch.publish(word)
 
-	def transform_broadcaster_qr_position(self, data):
+	def qr_position(self, data):
 		euler = tf.transformations.euler_from_quaternion((data.pose.orientation.x, data.pose.orientation.y, data.pose.orientation.z, data.pose.orientation.w))
 
 		temp_x = data.pose.position.x * -1
 		temp_y = data.pose.position.y * -1
 
-		br = tf.TransformBroadcaster()
-		br.sendTransform((data.pose.position.z,temp_x, temp_y),
-                     tf.transformations.quaternion_from_euler(euler[0], euler[1], euler[2]),
-                     rospy.Time.now(),
-                     "/qr_code",
-                     "/cam_rgb_link")
-
+		#デバッグ用
+		#br = tf.TransformBroadcaster()
+		#br.sendTransform((data.pose.position.z,temp_x, temp_y),
+        #             tf.transformations.quaternion_from_euler(euler[0], euler[1], euler[2]),
+        #             rospy.Time.now(),
+        #             "/qr_code",
+        #             "/cam_rgb_link")
 
 		get_qr_distance = data.pose.position.z * 100
 		if get_qr_distance == 0:
-			qr_distance = 0
+			return
 		elif get_qr_distance < self.twenty_cm:
 			qr_distance = 20
 		elif get_qr_distance < self.thirty_cm:
@@ -144,15 +146,23 @@ class Scratch3Connector:
 		elif get_qr_distance < self.hundred_cm:
 			qr_distance = 100
 		else:
-			qr_distance = 0
+			return
 
-		qr_angle = math.degrees(euler[1])
+		if self.save_qr_distance != get_qr_distance:
+			qr_distance_word = "qr_distance:" + str(qr_distance)
+			self.pub_ros_scratch.publish(qr_distance_word)
+			self.save_qr_distance = get_qr_distance
 
-		qr_distance_word = "qr_distance:" + str(qr_distance)
-		qr_angle_word = "qr_angle:" + str(qr_angle)
 
-		self.pub_ros_scratch.publish(qr_distance_word)
-		self.pub_ros_scratch.publish(qr_angle_word)
+
+		qr_angle = int(math.degrees(euler[1]))
+		if qr_angle == 0:
+			return
+
+		if self.save_qr_angle != qr_angle:
+			qr_angle_word = "qr_angle:" + str(qr_angle)
+			self.pub_ros_scratch.publish(qr_angle_word)
+			self.save_qr_angle = qr_angle
 
 
 
