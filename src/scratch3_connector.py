@@ -31,10 +31,10 @@ class Scratch3Connector:
 
 		self.sub_bumper = rospy.Subscriber("/mobile_base/events/bumper", BumperEvent, self.bumper_state)
 		self.sub_button = rospy.Subscriber("/mobile_base/events/button", ButtonEvent, self.button_state)
-		self.sub_xtion_scan = rospy.Subscriber('/scan',LaserScan, self.xtion_scan)
 		self.image_sub = rospy.Subscriber("/usb_cam/image_raw",Image,self.qr_recode)
 		self.sub_wifi_connect = rospy.Subscriber("/wifi_connect", Bool, self.cb_wifi_connect)
 		self.sub_qr_position = rospy.Subscriber("/visp_auto_tracker/object_position", PoseStamped, self.qr_position)
+		self.sub_odom = rospy.Subscriber('/odom',Odometry, self.cb_odom)
 		self.pub_led1 = rospy.Publisher('/mobile_base/commands/led1', Led, queue_size = 10)
 		self.pub_led2 = rospy.Publisher('/mobile_base/commands/led2', Led, queue_size = 10)
 		self.pub_sound = rospy.Publisher('/mobile_base/commands/sound', Sound, queue_size = 10)
@@ -102,13 +102,21 @@ class Scratch3Connector:
 			reset_val = Empty()
 			self.pub_reset_odometry.publish(reset_val)
 
-	def xtion_scan(self, data):
-		array_middle_num  = len(data.ranges)/2
-		if "nan"==str(data.ranges[array_middle_num]):
-			word = "xtion_senser_distance:0.0"
-		else:
-			word = "xtion_senser_distance:" + str(data.ranges[array_middle_num])[0:3]
-		self.pub_ros_scratch.publish(word)
+	def cb_odom(self, data):
+		robo_pose_x = data.pose.pose.position.x
+		robo_pose_y = data.pose.pose.position.y
+		euler = tf.transformations.euler_from_quaternion((data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w))
+		robo_rad = euler[2]
+		robo_deg = math.degrees(robo_rad)
+
+		robo_pose_x_word = "robot_pose_x:" + str(robo_pose_x)
+		robo_pose_y_word = "robot_pose_y:" + str(robo_pose_y)
+		robo_angle_word = "robot_angle:" + str(robo_deg)
+
+		self.pub_ros_scratch.publish(robo_pose_x_word)
+		self.pub_ros_scratch.publish(robo_pose_y_word)
+		self.pub_ros_scratch.publish(robo_angle_word)
+
 
 	def qr_position(self, data):
 		euler = tf.transformations.euler_from_quaternion((data.pose.orientation.x, data.pose.orientation.y, data.pose.orientation.z, data.pose.orientation.w))
