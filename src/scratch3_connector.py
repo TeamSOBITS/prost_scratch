@@ -34,6 +34,7 @@ class Scratch3Connector:
 		self.sub_xtion_scan = rospy.Subscriber('/scan',LaserScan, self.xtion_scan)
 		self.sub_odom = rospy.Subscriber('/odom',Odometry, self.cb_odom)
 		self.image_sub = rospy.Subscriber("/usb_cam/image_raw",Image,self.qr_recode)
+		self.sub_wifi_connect = rospy.Subscriber("/wifi_connect", Bool, self.cb_wifi_connect)
 		self.sub_qr_position = rospy.Subscriber("/visp_auto_tracker/object_position", PoseStamped, self.transform_broadcaster_qr_position)
 		self.pub_led2 = rospy.Publisher('/mobile_base/commands/led2', Led, queue_size = 10)
 		self.pub_sound = rospy.Publisher('/mobile_base/commands/sound', Sound, queue_size = 10)
@@ -53,6 +54,12 @@ class Scratch3Connector:
 		self.ninety_cm = 38
 		self.hundred_cm =45
 
+
+	def cb_wifi_connect(self, state):
+		if state.data == True:
+			self.pub_led1.publish(1)#on--green
+		else:
+			self.pub_led1.publish(3)#off--red
 
 	def cb_scratch_ros(self, msg):
 		self.get_msg = msg.data
