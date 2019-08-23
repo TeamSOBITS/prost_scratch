@@ -8,7 +8,7 @@ import PIL.Image
 import numpy as np
 import tf
 import math
-from std_msgs.msg import String,UInt8,Empty
+from std_msgs.msg import String,UInt8,Empty,Bool
 from geometry_msgs.msg import Twist,Quaternion,PoseStamped
 from sensor_msgs.msg import LaserScan,Image
 from kobuki_msgs.msg import *
