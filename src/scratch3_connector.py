@@ -36,6 +36,7 @@ class Scratch3Connector:
 		self.image_sub = rospy.Subscriber("/usb_cam/image_raw",Image,self.qr_recode)
 		self.sub_wifi_connect = rospy.Subscriber("/wifi_connect", Bool, self.cb_wifi_connect)
 		self.sub_qr_position = rospy.Subscriber("/visp_auto_tracker/object_position", PoseStamped, self.transform_broadcaster_qr_position)
+		self.pub_led1 = rospy.Publisher('/mobile_base/commands/led1', Led, queue_size = 10)
 		self.pub_led2 = rospy.Publisher('/mobile_base/commands/led2', Led, queue_size = 10)
 		self.pub_sound = rospy.Publisher('/mobile_base/commands/sound', Sound, queue_size = 10)
 		self.pub_twist = rospy.Publisher('/mobile_base/commands/velocity', Twist, queue_size = 10)
