@@ -28,7 +28,7 @@ class Scratch3Connector:
 
 		self.sub_scratch_ros = rospy.Subscriber("/scratch_ros", String, self.cb_scratch_ros)#scratchから受け取るメッセージ
 		self.pub_ros_scratch = rospy.Publisher('/ros_scratch', String, queue_size = 10)#scratchへ送るメッセージ
-		self.pub_ros_scratch_debug = rospy.Publisher('/ros_scratch_debug', String, queue_size = 10)#scratchへ送るメッセージ
+
 		self.sub_bumper = rospy.Subscriber("/mobile_base/events/bumper", BumperEvent, self.bumper_state)
 		self.sub_button = rospy.Subscriber("/mobile_base/events/button", ButtonEvent, self.button_state)
 		self.image_sub = rospy.Subscriber("/usb_cam/image_raw",Image,self.qr_recode)
@@ -44,6 +44,15 @@ class Scratch3Connector:
 
 		self.moving_speed = Twist()
 		self.listener = tf.TransformListener()
+		self.twenty_cm = 8
+		self.thirty_cm = 12
+		self.forty_cm = 16
+		self.fifty_cm = 22
+		self.sixty_cm = 26
+		self.seventy_cm = 28
+		self.eighty_cm = 34
+		self.ninety_cm = 38
+		self.hundred_cm =45
 		self.save_qr_distance = 0
 		self.save_qr_width = 0
 		self.save_qr_angle = 0
@@ -116,17 +125,44 @@ class Scratch3Connector:
 		temp_high = data.pose.position.y * -1
 		temp_distance = data.pose.position.z
 
-		get_qr_distance = temp_distance * 100
+		#デバッグ用
+		#br = tf.TransformBroadcaster()
+		#br.sendTransform((temp_distance,temp_width, temp_high),
+        #             tf.transformations.quaternion_from_euler(euler[0], euler[1], euler[2]),
+        #             rospy.Time.now(),
+        #             "/qr_code",
+        #             "/cam_rgb_link")
 
-	 	get_qr_distance = 0.00999177789385630000 * get_qr_distance * get_qr_distance + 1.95235227648073000000 * get_qr_distance + 4.00275749637565000000	#distance_calibration
+		get_qr_distance = temp_distance * 100
+		if get_qr_distance == 0:
+			return
+		elif get_qr_distance < self.twenty_cm:
+			qr_distance = 20
+		elif get_qr_distance < self.thirty_cm:
+			qr_distance = 30
+		elif get_qr_distance < self.forty_cm:
+			qr_distance = 40
+		elif get_qr_distance < self.fifty_cm:
+			qr_distance = 50
+		elif get_qr_distance < self.sixty_cm:
+			qr_distance = 60
+		elif get_qr_distance < self.seventy_cm:
+			qr_distance = 70
+		elif get_qr_distance < self.eighty_cm:
+			qr_distance = 80
+		elif get_qr_distance < self.ninety_cm:
+			qr_distance = 90
+		elif get_qr_distance < self.hundred_cm:
+			qr_distance = 100
+		else:
+			return
 
 		if self.save_qr_distance != get_qr_distance:
-			qr_distance_word = "qr_distance:" + str(get_qr_distance)
+			qr_distance_word = "qr_distance:" + str(qr_distance)
 			self.pub_ros_scratch.publish(qr_distance_word)
-			self.pub_ros_scratch_debug.publish(qr_distance_word)	#デバッグ用
 			self.save_qr_distance = get_qr_distance
 
-		get_qr_width = int(temp_width * 100)
+		get_qr_width = int(temp_width *100)
 		if self.save_qr_width != get_qr_width:
 			qr_width_word = "qr_width:" + str(get_qr_width)
 			self.pub_ros_scratch.publish(qr_width_word)
