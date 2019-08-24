@@ -6,12 +6,6 @@
 	<!-- rosbridge_server -->
 	<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
 
-	<!-- tracklive_usb -->
-	<include file="$(find prost_scratch)/launch/tracklive_usb.launch"/>
-
-	<!-- prost_scratch_kobuki_controller -->
-  <node name="prost_scratch_kobuki_controller" pkg="prost_scratch" type="prost_scratch_kobuki_controller.py" output="screen"/>
-
 	<!-- scratch3_connector -->
 	<node name="scratch3_connector" pkg="prost_scratch" type="scratch3_connector.py" output="screen"/>
 
@@ -21,5 +15,7 @@
 	<!-- wifi_connect -->
 	<node name="wifi_connect" pkg="prost_scratch" type="wifi_connect.py" output="screen"/>
 
+	<!-- prost_scratch_kobuki_controller -->
+	<node name="prost_scratch_kobuki_controller" pkg="prost_scratch" type="prost_scratch_kobuki_controller.py" output="screen"/>
 
 </launch>

@@ -8,6 +8,7 @@ import PIL.Image
 import numpy as np
 import tf
 import math
+from subprocess import Popen
 from std_msgs.msg import String,UInt8,Empty,Bool
 from geometry_msgs.msg import Twist,Quaternion,PoseStamped
 from sensor_msgs.msg import LaserScan,Image
@@ -56,6 +57,9 @@ class Scratch3Connector:
 		self.save_qr_distance = 0
 		self.save_qr_angle = 0
 
+		rospy.sleep(3)
+		#QR認識
+		Popen( ["roslaunch","prost_scratch","tracklive_usb.launch"] )
 
 	def cb_wifi_connect(self, state):
 		if state.data == True:
