@@ -60,7 +60,7 @@ class Scratch3Connector:
 
 		rospy.sleep(3)
 		#QR認識
-		qr_node = Popen( ["roslaunch","prost_scratch","tracklive_usb.launch"] )
+		qr_node = Popen( ["roslaunch","prost_scratch","minimal.launch"] )
 
 	def cb_wifi_connect(self, state):
 		if state.data == True:
