@@ -18,6 +18,9 @@
 	<!-- wifi_connect -->
 	<node name="wifi_connect" pkg="prost_scratch" type="wifi_connect.py" output="screen"/>
 
+	<!-- text_to_speech -->
+	<include file="$(find text_to_speech)/launch/tts_google.launch"/>
+
 	<!-- prost_scratch_kobuki_controller -->
 	<node name="prost_scratch_kobuki_controller" pkg="prost_scratch" type="prost_scratch_kobuki_controller.py" output="screen"/>
 
