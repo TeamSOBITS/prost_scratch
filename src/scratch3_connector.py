@@ -41,6 +41,7 @@ class Scratch3Connector:
 		self.pub_twist = rospy.Publisher('/mobile_base/commands/velocity', Twist, queue_size = 10)
 		self.pub_reset_odometry = rospy.Publisher('/mobile_base/commands/reset_odometry', Empty, queue_size=10)
 		self.pub_odom_base_ctrl = rospy.Publisher('/odom_base_ctrl', String, queue_size = 10)
+		self.pub_speech_word = rospy.Publisher('/speech_word', String, queue_size = 10)
 
 		self.moving_speed = Twist()
 		self.listener = tf.TransformListener()
@@ -56,6 +57,7 @@ class Scratch3Connector:
 
 	def cb_scratch_ros(self, msg):
 		self.get_msg = msg.data
+		print(self.get_msg)
 		if(self.get_msg.find('LED:') >= 0):
 			word = self.get_msg[4:len(self.get_msg)]
 			#rospy.loginfo(word)
@@ -92,6 +94,9 @@ class Scratch3Connector:
 		elif(self.get_msg.find('odome_initialize') >= 0):
 			reset_val = Empty()
 			self.pub_reset_odometry.publish(reset_val)
+		elif(self.get_msg.find('speech') >= 0):
+			word = self.get_msg[7:len(self.get_msg)]
+			self.pub_speech_word.publish(word)
 
 	def cb_odom(self, data):
 		robo_pose_x = data.pose.pose.position.x
