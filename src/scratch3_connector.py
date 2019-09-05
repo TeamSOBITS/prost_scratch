@@ -33,7 +33,6 @@ class Scratch3Connector:
 		self.sub_button = rospy.Subscriber("/mobile_base/events/button", ButtonEvent, self.button_state)
 		self.image_sub = rospy.Subscriber("/usb_cam/image_raw",Image,self.qr_recode)
 		self.sub_wifi_connect = rospy.Subscriber("/wifi_connect", Bool, self.cb_wifi_connect)
-		self.sub_qr_position = rospy.Subscriber("/visp_auto_tracker/object_position", PoseStamped, self.qr_position)
 		self.sub_odom = rospy.Subscriber('/odom',Odometry, self.cb_odom)
 		self.pub_led1 = rospy.Publisher('/mobile_base/commands/led1', Led, queue_size = 10)
 		self.pub_led2 = rospy.Publisher('/mobile_base/commands/led2', Led, queue_size = 10)
@@ -48,7 +47,8 @@ class Scratch3Connector:
 		self.save_qr_distance = 0
 		self.save_qr_width = 0
 		self.save_qr_angle = 0
-		rospy.sleep(1)
+		
+		self.sub_qr_position = rospy.Subscriber("/visp_auto_tracker/object_position", PoseStamped, self.qr_position)
 
 	def cb_wifi_connect(self, state):
 		if state.data == True:
