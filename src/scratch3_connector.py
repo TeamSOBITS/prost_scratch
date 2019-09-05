@@ -48,6 +48,7 @@ class Scratch3Connector:
 		self.save_qr_distance = 0
 		self.save_qr_width = 0
 		self.save_qr_angle = 0
+		rospy.sleep(1)
 
 	def cb_wifi_connect(self, state):
 		if state.data == True:

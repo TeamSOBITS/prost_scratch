@@ -3,14 +3,11 @@
 	<!-- turtlebot_bringup -->
 	<include file="$(find prost_scratch)/launch/minimal.launch"/>
 
-	<!-- tracklive_usb -->
-	<include file="$(find prost_scratch)/launch/tracklive_usb.launch"/>
+	<!-- scratch3_connector -->
+	<node name="scratch3_connector" pkg="prost_scratch" type="scratch3_connector.py" output="screen"/>
 
 	<!-- rosbridge_server -->
 	<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
-
-	<!-- scratch3_connector -->
-	<node name="scratch3_connector" pkg="prost_scratch" type="scratch3_connector.py" output="screen"/>
 
 	<!-- web_video_server -->
   <node name="web_video_server" pkg="web_video_server" type="web_video_server" output="screen"/>
@@ -23,5 +20,8 @@
 
 	<!-- prost_scratch_kobuki_controller -->
 	<node name="prost_scratch_kobuki_controller" pkg="prost_scratch" type="prost_scratch_kobuki_controller.py" output="screen"/>
+
+	<!-- tracklive_usb -->
+	<include file="$(find prost_scratch)/launch/tracklive_usb.launch"/>
 
 </launch>
