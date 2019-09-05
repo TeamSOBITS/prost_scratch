@@ -123,7 +123,7 @@ class Scratch3Connector:
 
 		get_qr_distance = temp_distance * 100
 
-	 	get_qr_distance = 0.00999177789385630000 * get_qr_distance * get_qr_distance + 1.95235227648073000000 * get_qr_distance + 4.00275749637565000000	#distance_calibration
+		get_qr_distance = 0.00999177789385630000 * get_qr_distance * get_qr_distance + 1.95235227648073000000 * get_qr_distance + 4.00275749637565000000	#distance_calibration
 
 		if self.save_qr_distance != get_qr_distance:
 			qr_distance_word = "qr_distance:" + str(get_qr_distance)
