@@ -25,7 +25,6 @@ class Scratch3Connector:
 		self.sub_bumper = rospy.Subscriber("/mobile_base/events/bumper", BumperEvent, self.bumper_state)
 		self.sub_button = rospy.Subscriber("/mobile_base/events/button", ButtonEvent, self.button_state)
 		self.sub_wifi_connect = rospy.Subscriber("/wifi_connect", Bool, self.cb_wifi_connect)
-		self.sub_battery = rospy.Subscriber('mobile_base/sensors/core', SensorState, self.battery_state)
 		self.pub_led1 = rospy.Publisher('/mobile_base/commands/led1', Led, queue_size = 10)#LED1光らせる
 		self.pub_led2 = rospy.Publisher('/mobile_base/commands/led2', Led, queue_size = 10)#LED2光らせる
 		self.pub_sound = rospy.Publisher('/mobile_base/commands/sound', Sound, queue_size = 10)
