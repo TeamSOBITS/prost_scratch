@@ -47,7 +47,7 @@ class Scratch3Connector:
 		self.save_qr_distance = 0
 		self.save_qr_width = 0
 		self.save_qr_angle = 0
-		
+
 		self.sub_qr_position = rospy.Subscriber("/visp_auto_tracker/object_position", PoseStamped, self.qr_position)
 
 	def cb_wifi_connect(self, state):
@@ -176,6 +176,10 @@ class Scratch3Connector:
 		for symbol in image:
 			word = "qr_recode:" + str(symbol.data)
 			self.pub_ros_scratch.publish(String(word))
+
+		# qr not exist
+		empty_word = ""
+		self.pub_ros_scratch.publish(String(empty_word))
 
 
 
