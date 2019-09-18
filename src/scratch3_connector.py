@@ -176,13 +176,12 @@ class Scratch3Connector:
 
 		#result
 		self.scanner.scan(image)
+		word = ""
 		for symbol in image:
-			word = "qr_recode:" + str(symbol.data)
-			self.pub_ros_scratch.publish(String(word))
+			word = str(symbol.data)
 
-		# qr not exist
-		empty_word = ""
-		self.pub_ros_scratch.publish(String(empty_word))
+		word = "qr_recode:" + word
+		self.pub_ros_scratch.publish(String(word))
 
 
 
