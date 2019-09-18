@@ -34,6 +34,7 @@ class Scratch3Connector:
 		self.image_sub = rospy.Subscriber("/usb_cam/image_raw",Image,self.qr_recode)
 		self.sub_wifi_connect = rospy.Subscriber("/wifi_connect", Bool, self.cb_wifi_connect)
 		self.sub_odom = rospy.Subscriber('/odom',Odometry, self.cb_odom)
+		self.sub_speech_recognition = rospy.Subscriber('/speech_recognition/word', String, self.speech_recognition)
 		self.pub_led1 = rospy.Publisher('/mobile_base/commands/led1', Led, queue_size = 10)
 		self.pub_led2 = rospy.Publisher('/mobile_base/commands/led2', Led, queue_size = 10)
 		self.pub_sound = rospy.Publisher('/mobile_base/commands/sound', Sound, queue_size = 10)
@@ -229,6 +230,9 @@ class Scratch3Connector:
 				word.data = 'button_2:true'
 				self.pub_ros_scratch.publish(word)
 
+	def self.speech_recognition(self, data):
+		word = 'recognition_word:' + str(data)
+		self.pub_ros_scratch.publish(word)
 
 
 if __name__ == '__main__':
