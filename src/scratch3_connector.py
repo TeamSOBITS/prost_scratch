@@ -232,7 +232,7 @@ class Scratch3Connector:
 				word.data = 'button_2:true'
 				self.pub_ros_scratch.publish(word)
 
-	def self.speech_recognition(self, data):
+	def speech_recognition(self, data):
 		word = 'recognition_word:' + str(data)
 		self.pub_ros_scratch.publish(word)
 
