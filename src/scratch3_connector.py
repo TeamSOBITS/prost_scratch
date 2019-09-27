@@ -48,7 +48,7 @@ class Scratch3Connector:
 		self.save_qr_distance = 0
 		self.save_qr_width = 0
 		self.save_qr_angle = 0
-		self.upper_limit_speed = 45
+		self.upper_limit_speed = 60
 		self.lower_limit_speed = -45
 
 
@@ -84,7 +84,7 @@ class Scratch3Connector:
 		elif(self.get_msg.find('move_speed:') >= 0):
 			word = self.get_msg[11:len(self.get_msg)]
 			if float(word) >= self.upper_limit_speed:
-				word = "45"
+				word = "60"
 			elif float(word) <= self.lower_limit_speed:
 				word = "-45"
 			self.moving_speed.linear.x = float(word) * 0.01
