@@ -82,9 +82,9 @@ class Scratch3Connector:
 			self.pub_odom_base_ctrl.publish(self.get_msg)
 		elif(self.get_msg.find('move_speed:') >= 0):
 			word = self.get_msg[11:len(self.get_msg)]
-			if float(word) > self.upper_limit_speed:
+			if float(word) >= self.upper_limit_speed:
 				word = "45"
-			elif float(word) < self.lower_limit_speed:
+			elif float(word) <= self.lower_limit_speed:
 				word = "-45"
 			self.moving_speed.linear.x = float(word) * 0.01
 			self.moving_speed.angular.z = 0.0
