@@ -48,8 +48,9 @@ class Scratch3Connector:
 		self.save_qr_distance = 0
 		self.save_qr_width = 0
 		self.save_qr_angle = 0
-		self.lower_limit_speed = -45
 		self.upper_limit_speed = 45
+		self.lower_limit_speed = -45
+
 
 		self.sub_qr_position = rospy.Subscriber("/visp_auto_tracker/object_position", PoseStamped, self.qr_position)
 
