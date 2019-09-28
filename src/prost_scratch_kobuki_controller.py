@@ -32,7 +32,7 @@ class OdomBaseController:
 		self.turn_ki = 0.15
 		#直進制御パラメータ//各自調整
 		self.stlight_acs = 0.01 		#加速度(デフォルト：0.01)
-		self.stlight_speed_max = 0.1 	#最高速度(デフォルト：0.2m/s)
+		self.stlight_speed_max = 0.4 	#最高速度(デフォルト：0.2m/s)
 		self.stlight_speed_min = 0		#最低速度(デフォルト:0m/s)
 		self.stlight_ki = 0.1			#積分係数
 

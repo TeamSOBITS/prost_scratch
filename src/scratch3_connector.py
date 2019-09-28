@@ -48,9 +48,6 @@ class Scratch3Connector:
 		self.save_qr_distance = 0
 		self.save_qr_width = 0
 		self.save_qr_angle = 0
-		self.upper_limit_speed = 45
-		self.lower_limit_speed = -45
-
 
 		self.sub_qr_position = rospy.Subscriber("/visp_auto_tracker/object_position", PoseStamped, self.qr_position)
 
@@ -83,10 +80,6 @@ class Scratch3Connector:
 			self.pub_odom_base_ctrl.publish(self.get_msg)
 		elif(self.get_msg.find('move_speed:') >= 0):
 			word = self.get_msg[11:len(self.get_msg)]
-			if float(word) >= self.upper_limit_speed:
-				word = "45"
-			elif float(word) <= self.lower_limit_speed:
-				word = "-45"
 			self.moving_speed.linear.x = float(word) * 0.01
 			self.moving_speed.angular.z = 0.0
 			self.pub_twist.publish(self.moving_speed)
@@ -94,6 +87,14 @@ class Scratch3Connector:
 			word = self.get_msg[15:len(self.get_msg)]
 			self.moving_speed.linear.x = 0.0
 			self.moving_speed.angular.z = math.radians(float(word))
+			self.pub_twist.publish(self.moving_speed)
+		elif(self.get_msg.find('turtlebot_cmd_vel:') >= 0):
+			word = self.get_msg[18:len(self.get_msg)]
+			num = word.find(',')
+			vel = word[0:num]
+			rad = word[num+1:len(word)]
+			self.moving_speed.linear.x = float(vel) * 0.01
+			self.moving_speed.angular.z = math.radians(float(rad))
 			self.pub_twist.publish(self.moving_speed)
 		elif(self.get_msg.find('motion_stop:') >= 0):
 			word = self.get_msg[12:len(self.get_msg)]
