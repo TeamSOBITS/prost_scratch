@@ -31,7 +31,8 @@ class Scratch3Connector:
 		self.pub_ros_scratch_debug = rospy.Publisher('/ros_scratch_debug', String, queue_size = 10)#scratchへ送るメッセージ
 		self.sub_bumper = rospy.Subscriber("/mobile_base/events/bumper", BumperEvent, self.bumper_state)
 		self.sub_button = rospy.Subscriber("/mobile_base/events/button", ButtonEvent, self.button_state)
-		self.image_sub = rospy.Subscriber("/usb_cam/image_raw",Image,self.qr_recode)
+		self.image_sub_qr = rospy.Subscriber("/usb_cam/image_raw",Image,self.qr_recode)
+		self.image_sub_rgb = rospy.Subscriber("/usb_cam/image_raw",Image,self.image_rgb_ave)
 		self.sub_wifi_connect = rospy.Subscriber("/wifi_connect", Bool, self.cb_wifi_connect)
 		self.sub_odom = rospy.Subscriber('/odom',Odometry, self.cb_odom)
 		self.sub_speech_recognition = rospy.Subscriber('/speech_recognition/word', String, self.speech_recognition)
@@ -48,6 +49,10 @@ class Scratch3Connector:
 		self.save_qr_distance = 0
 		self.save_qr_width = 0
 		self.save_qr_angle = 0
+
+		self.b = []
+		self.g = []
+		self.r = []
 
 		self.sub_qr_position = rospy.Subscriber("/visp_auto_tracker/object_position", PoseStamped, self.qr_position)
 
@@ -189,6 +194,76 @@ class Scratch3Connector:
 		word = "qr_recode:" + word
 		self.pub_ros_scratch.publish(String(word))
 
+	def image_rgb_ave(self, ros_image):
+		try:
+			frame = self.bridge.imgmsg_to_cv2(ros_image, "bgr8")
+			(rows,cols,channels) = frame.shape
+			image_size = rows * cols
+			#print("debag")
+			#print(" ")
+			#print("image_size")
+			#print(image_size)
+			#print("rows")
+			#print(len(frame))
+			#print("cols")
+			#print(len(frame[0]))
+			#print("channels")
+			#print(len(frame[0][0]))
+			#print(" ")
+
+			#rgb Average
+			for i in range(rows):
+				for j in range(cols):
+					self.b.append(frame[i][j][0])
+					self.g.append(frame[i][j][1])
+					self.r.append(frame[i][j][2])
+			#print(len(self.b))
+			b_ave = sum(self.b) / len(self.b)
+			g_ave = sum(self.g) / len(self.g)
+			r_ave = sum(self.r) / len(self.r)
+			#rospy.loginfo("Average b:%d  g:%d r:%d", b_ave, g_ave ,r_ave)
+
+			b_ave_word = "image_b_ave:" + str(b_ave)
+			g_ave_word = "image_g_ave:" + str(g_ave)
+			r_ave_word = "image_r_ave:" + str(r_ave)
+			self.pub_ros_scratch.publish(b_ave_word)
+			self.pub_ros_scratch.publish(g_ave_word)
+			self.pub_ros_scratch.publish(r_ave_word)
+
+			#Most common color
+			if 30 > b_ave and 30 > g_ave and 30 > r_ave:
+				word = "image_common_color:黒"
+				self.pub_ros_scratch.publish(word)
+			elif b_ave > 100 and g_ave > 100 and r_ave > 100 and 130 > b_ave and 130 > g_ave and 130 > r_ave:
+				word = "image_common_color:白"
+				self.pub_ros_scratch.publish(word)
+			elif r_ave > g_ave and b_ave > g_ave:
+				word = "image_common_color:紫"
+				self.pub_ros_scratch.publish(word)
+			elif b_ave > g_ave and b_ave > r_ave and b_ave >230:
+				word = "image_common_color:青"
+				self.pub_ros_scratch.publish(word)
+			elif g_ave > b_ave and g_ave > r_ave and g_ave >130:
+				word = "image_common_color:緑"
+				self.pub_ros_scratch.publish(word)
+			elif r_ave > g_ave and r_ave > b_ave and r_ave >200:
+				word = "image_common_color:赤"
+				self.pub_ros_scratch.publish(word)
+			elif g_ave > r_ave and b_ave > r_ave:
+				word = "image_common_color:水色"
+				self.pub_ros_scratch.publish(word)
+			elif r_ave > b_ave and g_ave > b_ave:
+				word = "image_common_color:黃"
+				self.pub_ros_scratch.publish(word)
+
+			#initialization
+			self.b = []
+			self.g = []
+			self.r = []
+
+		except CvBridgeError, e:
+			print e
+		input_image = np.array(frame, dtype=np.uint8)
 
 
 	def bumper_state(self, data):
