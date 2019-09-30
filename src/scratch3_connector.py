@@ -199,7 +199,10 @@ class Scratch3Connector:
 			frame = self.bridge.imgmsg_to_cv2(ros_image, "bgr8")
 			(rows,cols,channels) = frame.shape
 			image_size = rows * cols
-			#print("debag")
+			#debug
+			#copy_image = frame.copy()
+			#print(rows)#480
+			#print(cols)#680
 			#print(" ")
 			#print("image_size")
 			#print(image_size)
@@ -211,17 +214,27 @@ class Scratch3Connector:
 			#print(len(frame[0][0]))
 			#print(" ")
 
-			#rgb Average
-			for i in range(rows):
-				for j in range(cols):
+			#rgb Average 物体が映る範囲
+			for i in range(280, 370):
+				for j in range(310, 370):
 					self.b.append(frame[i][j][0])
 					self.g.append(frame[i][j][1])
 					self.r.append(frame[i][j][2])
-			#print(len(self.b))
+					#debug
+					#copy_image[i][j][0] = 0
+					#copy_image[i][j][1] = 0
+					#copy_image[i][j][2] = 0
+			#debug
+			#cv2.namedWindow("image")
+			#cv2.imshow("image", copy_image)
+			#cv2.waitKey(10)
+
 			b_ave = sum(self.b) / len(self.b)
 			g_ave = sum(self.g) / len(self.g)
 			r_ave = sum(self.r) / len(self.r)
-			#rospy.loginfo("Average b:%d  g:%d r:%d", b_ave, g_ave ,r_ave)
+			#rospy.loginfo("Average r:%d  g:%d b:%d", r_ave, g_ave ,b_ave)
+
+
 
 			b_ave_word = "image_b_ave:" + str(b_ave)
 			g_ave_word = "image_g_ave:" + str(g_ave)
