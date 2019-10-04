@@ -24,12 +24,22 @@ class Scratch3Connector:
 
 		self.scanner = zbar.ImageScanner()
 		self.scanner.parse_config('enable')
-		self.bridge = CvBridge()
+		self.bridge_qr = CvBridge()
+		self.bridge_image_rgb_ave = CvBridge()
+		self.bridge_range_drawing = CvBridge()
 		self.moving_speed = Twist()
 		self.listener = tf.TransformListener()
 		self.save_qr_distance = 0
 		self.save_qr_width = 0
 		self.save_qr_angle = 0
+		self.height_min_range = 270
+		self.height_max_range = 330
+		self.width_min_range = 275
+		self.width_max_range = 315
+
+		self.b_drawing = []
+		self.g_drawing = []
+		self.r_drawing = []
 
 		self.b = []
 		self.g = []
@@ -42,6 +52,7 @@ class Scratch3Connector:
 		self.sub_button = rospy.Subscriber("/mobile_base/events/button", ButtonEvent, self.button_state)
 		self.image_sub_qr = rospy.Subscriber("/usb_cam/image_raw",Image,self.qr_recode)
 		self.image_sub_rgb = rospy.Subscriber("/usb_cam/image_raw",Image,self.image_rgb_ave)
+		self.image_sub_range_drawing = rospy.Subscriber("/usb_cam/image_raw",Image,self.range_drawing)
 		self.sub_wifi_connect = rospy.Subscriber("/wifi_connect", Bool, self.cb_wifi_connect)
 		self.sub_odom = rospy.Subscriber('/odom',Odometry, self.cb_odom)
 		self.sub_speech_recognition = rospy.Subscriber('/speech_recognition/word', String, self.speech_recognition)
@@ -164,7 +175,7 @@ class Scratch3Connector:
 
 	def qr_recode(self,data):
 		try:
-		    cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+		    cv_image = self.bridge_qr.imgmsg_to_cv2(data, "bgr8")
 		except CvBridgeError as e:
 		    print(e)
 		#input image
@@ -193,29 +204,52 @@ class Scratch3Connector:
 		word = "qr_recode:" + word
 		self.pub_ros_scratch.publish(String(word))
 
+	def range_drawing(self, image):
+		try:
+			cv_image = self.bridge_range_drawing.imgmsg_to_cv2(image, "bgr8")
+			(width,height,channels) = cv_image.shape
+			image_size = width * height
+			copy_cv_image = cv_image.copy()
+
+			for i in range(self.height_min_range, self.height_max_range):
+				for j in range(self.width_min_range, self.width_max_range):
+					self.b_drawing.append(cv_image[i][j][0])
+					self.g_drawing.append(cv_image[i][j][1])
+					self.r_drawing.append(cv_image[i][j][2])
+
+			cv2.rectangle(copy_cv_image,(self.width_min_range,self.height_min_range),(self.width_max_range,self.height_max_range),(0,255,255),2)
+			specified_range_image = self.bridge_range_drawing.cv2_to_imgmsg(copy_cv_image, "bgr8")
+			self.pub_specified_range_drawing.publish(specified_range_image)
+
+			#initialization
+			self.b_drawing = []
+			self.g_drawing = []
+			self.r_drawing = []
+
+		except CvBridgeError, e:
+			print e
+
 	def image_rgb_ave(self, ros_image):
 		try:
-			frame = self.bridge.imgmsg_to_cv2(ros_image, "bgr8")
-			(rows,cols,channels) = frame.shape
-			image_size = rows * cols
+			frame = self.bridge_image_rgb_ave.imgmsg_to_cv2(ros_image, "bgr8")
+			(width,height,channels) = frame.shape
+			image_size = width * height
 			#debug
-			copy_image = frame.copy()
-			#print(rows)#480
-			#print(cols)#680
-			#print(" ")
+			#copy_image = frame.copy()
 			#print("image_size")
 			#print(image_size)
-			#print("rows")
-			#print(len(frame))
-			#print("cols")
-			#print(len(frame[0]))
+			#print("height")
+			#print(len(frame))#480
+			#print("width")
+			#print(len(frame[0]))#680
 			#print("channels")
 			#print(len(frame[0][0]))
 			#print(" ")
 
 			#rgb Average 物体が映る範囲
-			for i in range(280, 370):
-				for j in range(310, 370):
+			for i in range(self.height_min_range, self.height_max_range):
+				for j in range(self.width_min_range, self.width_max_range):
+					self.b.append(frame[i][j][0])
 					self.b.append(frame[i][j][0])
 					self.g.append(frame[i][j][1])
 					self.r.append(frame[i][j][2])
@@ -227,11 +261,6 @@ class Scratch3Connector:
 			#cv2.namedWindow("image")
 			#cv2.imshow("image", copy_image)
 			#cv2.waitKey(10)
-
-			cv2.rectangle(copy_image,(310,280),(370,370),(0,255,255),2)
-
-			specified_range_image = self.bridge.cv2_to_imgmsg(copy_image, "bgr8")
-			self.pub_specified_range_drawing.publish(specified_range_image)
 
 			b_ave = sum(self.b) / len(self.b)
 			g_ave = sum(self.g) / len(self.g)
@@ -248,30 +277,31 @@ class Scratch3Connector:
 			self.pub_ros_scratch.publish(r_ave_word)
 
 			#Most common color
-			if 30 > b_ave and 30 > g_ave and 30 > r_ave:
+			if 50 > b_ave and 50 > g_ave and 50 > r_ave:
 				word = "image_common_color:黒"
 				self.pub_ros_scratch.publish(word)
-			elif b_ave > 100 and g_ave > 100 and r_ave > 100 and 130 > b_ave and 130 > g_ave and 130 > r_ave:
+			elif b_ave > 150 and g_ave > 150 and r_ave > 150 and 200 > b_ave and 200 > g_ave and 200 > r_ave:
 				word = "image_common_color:白"
+				self.pub_ros_scratch.publish(word)
+			elif r_ave > g_ave and r_ave > b_ave and 100 > b_ave and 100 > g_ave :
+				word = "image_common_color:赤"
+				self.pub_ros_scratch.publish(word)
+			elif b_ave > g_ave and b_ave > r_ave and 50 > r_ave:
+				word = "image_common_color:青"
+				self.pub_ros_scratch.publish(word)
+			elif g_ave > b_ave and g_ave > r_ave and 50 > r_ave:
+				word = "image_common_color:緑"
 				self.pub_ros_scratch.publish(word)
 			elif r_ave > g_ave and b_ave > g_ave:
 				word = "image_common_color:紫"
 				self.pub_ros_scratch.publish(word)
-			elif b_ave > g_ave and b_ave > r_ave and b_ave >230:
-				word = "image_common_color:青"
-				self.pub_ros_scratch.publish(word)
-			elif g_ave > b_ave and g_ave > r_ave and g_ave >130:
-				word = "image_common_color:緑"
-				self.pub_ros_scratch.publish(word)
-			elif r_ave > g_ave and r_ave > b_ave and r_ave >200:
-				word = "image_common_color:赤"
+			elif r_ave > b_ave and g_ave > b_ave and r_ave > 150 and g_ave > 150:
+				word = "image_common_color:黃"
 				self.pub_ros_scratch.publish(word)
 			elif g_ave > r_ave and b_ave > r_ave:
 				word = "image_common_color:水色"
 				self.pub_ros_scratch.publish(word)
-			elif r_ave > b_ave and g_ave > b_ave:
-				word = "image_common_color:黃"
-				self.pub_ros_scratch.publish(word)
+
 
 			#initialization
 			self.b = []
