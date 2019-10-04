@@ -25,6 +25,15 @@ class Scratch3Connector:
 		self.scanner = zbar.ImageScanner()
 		self.scanner.parse_config('enable')
 		self.bridge = CvBridge()
+		self.moving_speed = Twist()
+		self.listener = tf.TransformListener()
+		self.save_qr_distance = 0
+		self.save_qr_width = 0
+		self.save_qr_angle = 0
+
+		self.b = []
+		self.g = []
+		self.r = []
 
 		self.sub_scratch_ros = rospy.Subscriber("/scratch_ros", String, self.cb_scratch_ros)#scratchから受け取るメッセージ
 		self.pub_ros_scratch = rospy.Publisher('/ros_scratch', String, queue_size = 10)#scratchへ送るメッセージ
@@ -43,17 +52,7 @@ class Scratch3Connector:
 		self.pub_reset_odometry = rospy.Publisher('/mobile_base/commands/reset_odometry', Empty, queue_size=10)
 		self.pub_odom_base_ctrl = rospy.Publisher('/odom_base_ctrl', String, queue_size = 10)
 		self.pub_speech_word = rospy.Publisher('/speech_word', String, queue_size = 10)
-
-		self.moving_speed = Twist()
-		self.listener = tf.TransformListener()
-		self.save_qr_distance = 0
-		self.save_qr_width = 0
-		self.save_qr_angle = 0
-
-		self.b = []
-		self.g = []
-		self.r = []
-
+		self.pub_specified_range_drawing = rospy.Publisher('/specified_range_drawing', Image, queue_size = 10)
 		self.sub_qr_position = rospy.Subscriber("/visp_auto_tracker/object_position", PoseStamped, self.qr_position)
 
 	def cb_wifi_connect(self, state):
@@ -200,7 +199,7 @@ class Scratch3Connector:
 			(rows,cols,channels) = frame.shape
 			image_size = rows * cols
 			#debug
-			#copy_image = frame.copy()
+			copy_image = frame.copy()
 			#print(rows)#480
 			#print(cols)#680
 			#print(" ")
@@ -228,6 +227,11 @@ class Scratch3Connector:
 			#cv2.namedWindow("image")
 			#cv2.imshow("image", copy_image)
 			#cv2.waitKey(10)
+
+			cv2.rectangle(copy_image,(310,280),(370,370),(0,255,255),2)
+
+			specified_range_image = self.bridge.cv2_to_imgmsg(copy_image, "bgr8")
+			self.pub_specified_range_drawing.publish(specified_range_image)
 
 			b_ave = sum(self.b) / len(self.b)
 			g_ave = sum(self.g) / len(self.g)
