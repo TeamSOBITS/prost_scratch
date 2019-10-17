@@ -32,10 +32,10 @@ class Scratch3Connector:
 		self.save_qr_distance = 0
 		self.save_qr_width = 0
 		self.save_qr_angle = 0
-		self.height_min_range = 270
-		self.height_max_range = 330
-		self.width_min_range = 275
-		self.width_max_range = 315
+		self.height_min_range = 275
+		self.height_max_range = 355
+		self.width_min_range = 320#275
+		self.width_max_range = 360#315
 
 		self.b_drawing = []
 		self.g_drawing = []
