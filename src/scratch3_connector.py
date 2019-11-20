@@ -8,6 +8,7 @@ import PIL.Image
 import numpy as np
 import tf
 import math
+import time
 from std_msgs.msg import String,UInt8,Empty,Bool
 from geometry_msgs.msg import Twist,Quaternion,PoseStamped
 from sensor_msgs.msg import LaserScan,Image
@@ -65,6 +66,11 @@ class Scratch3Connector:
 		self.pub_speech_word = rospy.Publisher('/speech_word', String, queue_size = 10)
 		self.pub_specified_range_drawing = rospy.Publisher('/specified_range_drawing', Image, queue_size = 10)
 		self.sub_qr_position = rospy.Subscriber("/visp_auto_tracker/object_position", PoseStamped, self.qr_position)
+
+		time.sleep(3)
+		connection_call = String()
+		connection_call = "USBを接続した後に、接続ブロックを実行してください"
+		self.pub_speech_word.publish(connection_call)
 
 	def cb_wifi_connect(self, state):
 		if state.data == True:
