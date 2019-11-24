@@ -51,10 +51,7 @@ class Scratch3Connector:
 		connection_call = "USBを接続した後に、接続ブロックを実行してください"
 		self.pub_speech_word.publish(connection_call)
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 75059edcd4411a0e648beffb93145c1a8cbddd32
 	def cb_wifi_connect(self, state):
 		if state.data == True:
 			self.pub_led1.publish(1)#on--green
