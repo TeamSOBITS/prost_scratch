@@ -3,9 +3,6 @@
 	<!-- turtlebot_bringup -->
 	<include file="$(find prost_scratch)/launch/minimal.launch"/>
 
-	<!-- scratch3_connector -->
-	<node name="scratch3_connector" pkg="prost_scratch" type="scratch3_connector.py" output="screen"/>
-
 	<!-- rosbridge_server -->
 	<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
 
@@ -26,5 +23,8 @@
 
 	<!-- tracklive_usb -->
 	<include file="$(find prost_scratch)/launch/tracklive_usb.launch"/>
+
+	<!-- for_prosta_competition -->
+	<include file="$(find prost_scratch)/launch/for_prosta_competition.launch"/>
 
 </launch>
