@@ -1,5 +1,7 @@
 <launch>
 
+  	<!-- scratch3_connector -->
+	<node name="scratch3_connector" pkg="prost_scratch" type="scratch3_connector.py" output="screen"/>
 	<!-- turtlebot_bringup -->
 	<include file="$(find prost_scratch)/launch/minimal.launch"/>
 
