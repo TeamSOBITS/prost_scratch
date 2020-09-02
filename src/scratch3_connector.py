@@ -49,7 +49,7 @@ class Scratch3Connector:
 		time.sleep(3)
 		connection_call = String()
 		connection_call = "USBを接続した後に、接続ブロックを実行してください"
-		#self.pub_speech_word.publish(connection_call)
+		self.pub_speech_word.publish(connection_call)
 
 
 	def cb_wifi_connect(self, state):
