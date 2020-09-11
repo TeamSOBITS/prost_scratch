@@ -12,6 +12,8 @@ Requires=networking.service
 User=pi-ps
 ExecStart=/usr/bin/screen -S scratch -ADm bash -l -c 'roslaunch prost_scratch scratch_connector.launch'
 Type=simple
+Restart=always
+RestartSec=1s
 
 [Install]
 WantedBy=multi-user.target
