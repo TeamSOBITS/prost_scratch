@@ -28,23 +28,28 @@ class Scratch3Connector:
 		self.save_qr_angle = 0
 		self.moving_speed = Twist()
 		self.listener = tf.TransformListener()
+		self.start = rospy.Timer
+		self.end = rospy.Timer
 
 		self.sub_scratch_ros = rospy.Subscriber("/scratch_ros", String, self.cb_scratch_ros)#scratchから受け取るメッセージ
 		self.pub_ros_scratch = rospy.Publisher('/ros_scratch', String, queue_size = 10)#scratchへ送るメッセージ
-		self.pub_ros_scratch_debug = rospy.Publisher('/ros_scratch_debug', String, queue_size = 10)#scratchへ送るメッセージ
-		self.sub_bumper = rospy.Subscriber("/mobile_base/events/bumper", BumperEvent, self.bumper_state)
-		self.sub_button = rospy.Subscriber("/mobile_base/events/button", ButtonEvent, self.button_state)
+		self.pub_ros_scratch_debug = rospy.Publisher('/ros_scratch_debug', String, queue_size = 10)#scratchへ送るメッセージ（デバッグ）
+		self.sub_bumper = rospy.Subscriber("/mobile_base/events/bumper", BumperEvent, self.bumper_state)#for bumper
+		self.sub_button = rospy.Subscriber("/mobile_base/events/button", ButtonEvent, self.button_state)#
 		self.sub_wifi_connect = rospy.Subscriber("/wifi_connect", Bool, self.cb_wifi_connect)
-		self.sub_odom = rospy.Subscriber('/odom',Odometry, self.cb_odom)
-		self.sub_speech_recognition = rospy.Subscriber('/speech_recognition/word', String, self.speech_recognition)
+		self.sub_odom = rospy.Subscriber('/odom',Odometry, self.cb_odom)#自己位置
+		self.sub_speech_recognition = rospy.Subscriber('/speech_recognition/word', String, self.speech_recognition)#発話
 		self.pub_led1 = rospy.Publisher('/mobile_base/commands/led1', Led, queue_size = 10)
 		self.pub_led2 = rospy.Publisher('/mobile_base/commands/led2', Led, queue_size = 10)
+
+		self.pub_second = rospy.Publisher('/cmd_second', String, queue_size = 10)
+
 		self.pub_sound = rospy.Publisher('/mobile_base/commands/sound', Sound, queue_size = 10)
-		self.pub_twist = rospy.Publisher('/mobile_base/commands/velocity', Twist, queue_size = 10)
-		self.pub_reset_odometry = rospy.Publisher('/mobile_base/commands/reset_odometry', Empty, queue_size=10)
+		self.pub_twist = rospy.Publisher('/mobile_base/commands/velocity', Twist, queue_size = 5)
+		self.pub_reset_odometry = rospy.Publisher('/mobile_base/commands/reset_odometry', Empty, queue_size=10)#自己位置初期化
 		self.pub_odom_base_ctrl = rospy.Publisher('/odom_base_ctrl', String, queue_size = 10)
 		self.pub_speech_word = rospy.Publisher('/speech_word', String, queue_size = 10)
-		self.sub_qr_position = rospy.Subscriber("/visp_auto_tracker/object_position", PoseStamped, self.qr_position)
+		self.sub_qr_position = rospy.Subscriber("/visp_auto_tracker/object_position", PoseStamped, self.qr_position)#QRの読み取り
 
 		time.sleep(3)
 		connection_call = String()
@@ -80,15 +85,36 @@ class Scratch3Connector:
 		elif(self.get_msg.find('T:') >= 0):
 			self.pub_odom_base_ctrl.publish(self.get_msg)
 		elif(self.get_msg.find('move_speed:') >= 0):
-			word = self.get_msg[11:len(self.get_msg)]
+			word = self.get_msg[11:self.get_msg.find(',')]
 			self.moving_speed.linear.x = float(word) * 0.01
 			self.moving_speed.angular.z = 0.0
-			self.pub_twist.publish(self.moving_speed)
+			if(self.get_msg.find('second:') >= 0):
+				if len(word) == 1:
+					second = self.get_msg[20:len(self.get_msg)]
+				elif len(word) == 2:
+					second = self.get_msg[21:len(self.get_msg)]
+				begin = rospy.get_time()
+			while True:
+				check = rospy.get_time() - begin
+				if check >= float(second):
+					break
+				self.pub_twist.publish(self.moving_speed)
 		elif(self.get_msg.find('rotation_speed:') >= 0):
-			word = self.get_msg[15:len(self.get_msg)]
+			word = self.get_msg[15:self.get_msg.find(',')]
 			self.moving_speed.linear.x = 0.0
 			self.moving_speed.angular.z = math.radians(float(word))
-			self.pub_twist.publish(self.moving_speed)
+			if(self.get_msg.find('second:') >= 0):
+				if len(word) == 1:
+					second = self.get_msg[24:len(self.get_msg)]
+				elif len(word) == 2:
+					second = self.get_msg[25:len(self.get_msg)]
+				begin = rospy.get_time()
+			while True:
+				check = rospy.get_time() - begin
+				if check >= float(second):
+					print(check)
+					break
+				self.pub_twist.publish(self.moving_speed)
 		elif(self.get_msg.find('turtlebot_cmd_vel:') >= 0):
 			word = self.get_msg[18:len(self.get_msg)]
 			num = word.find(',')
