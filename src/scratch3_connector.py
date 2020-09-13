@@ -86,6 +86,8 @@ class Scratch3Connector:
 			self.pub_odom_base_ctrl.publish(self.get_msg)
 		elif(self.get_msg.find('move_speed:') >= 0):
 			word = self.get_msg[11:self.get_msg.find(',')]
+			if float(word) > 20:
+				word = 20
 			self.moving_speed.linear.x = float(word) * 0.01
 			self.moving_speed.angular.z = 0.0
 			if(self.get_msg.find('second:') >= 0):
@@ -101,6 +103,8 @@ class Scratch3Connector:
 				self.pub_twist.publish(self.moving_speed)
 		elif(self.get_msg.find('rotation_speed:') >= 0):
 			word = self.get_msg[15:self.get_msg.find(',')]
+			if float(word) > 120:
+				word = 120
 			self.moving_speed.linear.x = 0.0
 			self.moving_speed.angular.z = math.radians(float(word))
 			if(self.get_msg.find('second:') >= 0):
