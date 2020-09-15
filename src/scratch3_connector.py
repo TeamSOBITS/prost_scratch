@@ -86,15 +86,14 @@ class Scratch3Connector:
 			self.pub_odom_base_ctrl.publish(self.get_msg)
 		elif(self.get_msg.find('move_speed:') >= 0):
 			word = self.get_msg[11:self.get_msg.find(',')]
-			if float(word) > 20:
-				word = 20
+			if float(word) > 50:
+				word = 50
+			if float(word) < -50:
+				word = -50
 			self.moving_speed.linear.x = float(word) * 0.01
 			self.moving_speed.angular.z = 0.0
 			if(self.get_msg.find('second:') >= 0):
-				if len(word) == 1:
-					second = self.get_msg[20:len(self.get_msg)]
-				elif len(word) == 2:
-					second = self.get_msg[21:len(self.get_msg)]
+				second = self.get_msg[self.get_msg.index(',')+8:len(self.get_msg)]
 				begin = rospy.get_time()
 			while True:
 				check = rospy.get_time() - begin
@@ -105,13 +104,12 @@ class Scratch3Connector:
 			word = self.get_msg[15:self.get_msg.find(',')]
 			if float(word) > 120:
 				word = 120
+			if float(word) < -120:
+				word = -120
 			self.moving_speed.linear.x = 0.0
 			self.moving_speed.angular.z = math.radians(float(word))
 			if(self.get_msg.find('second:') >= 0):
-				if len(word) == 1:
-					second = self.get_msg[24:len(self.get_msg)]
-				elif len(word) == 2:
-					second = self.get_msg[25:len(self.get_msg)]
+				second = self.get_msg[self.get_msg.index(',')+8:len(self.get_msg)]
 				begin = rospy.get_time()
 			while True:
 				check = rospy.get_time() - begin
