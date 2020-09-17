@@ -12,8 +12,9 @@ from std_msgs.msg import Bool
 if __name__ == "__main__":
     rospy.init_node('wifi_connect')
     rospy.loginfo("wifi connect check Started")
-    IP = "192.168.1."#接続を確認したいIP設定
+    #IP = "192.168.1."#接続を確認したいIP設定
     #IP = "172.23.138."#テスト用 (SOKA30WL)
+    IP = "192.168.0."#接続を確認したいIP設定
     connect_state = Bool()
     node_kill_flag = False
     pub_wifi_connect = rospy.Publisher('/wifi_connect', Bool, queue_size=10)

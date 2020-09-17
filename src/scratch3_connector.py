@@ -98,8 +98,9 @@ class Scratch3Connector:
 			while True:
 				check = rospy.get_time() - begin
 				if check >= float(second):
-					self.moving_speed.angular.x = 0
+					self.moving_speed.linear.x = 0
 					self.pub_twist.publish(self.moving_speed)
+					print(check)
 					break
 				self.pub_twist.publish(self.moving_speed)
 		elif(self.get_msg.find('rotation_speed:') >= 0):
