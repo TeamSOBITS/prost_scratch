@@ -6,7 +6,8 @@
   <arg name="stacks"/>
   <arg name="3d_sensor"/>
 
-  <arg name="urdf_file" default="$(find xacro)/xacro.py '$(find prost_scratch)/robots/kobuki_hexagons_asus_offset_prost_turtolebot.urdf.xacro'" />
+  <!-- following file is the model file -->
+  <arg name="urdf_file" default="$(find xacro)/xacro.py '$(find prostbot_description)/robots/kobuki_hexagons_asus_xtion_pro_offset.urdf.xacro'" />
   <param name="robot_description" command="$(arg urdf_file)" />
 
 </launch>
