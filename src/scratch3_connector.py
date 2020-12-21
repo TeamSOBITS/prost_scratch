@@ -41,9 +41,6 @@ class Scratch3Connector:
 		self.sub_speech_recognition = rospy.Subscriber('/speech_recognition/word', String, self.speech_recognition)#発話
 		self.pub_led1 = rospy.Publisher('/mobile_base/commands/led1', Led, queue_size = 10)
 		self.pub_led2 = rospy.Publisher('/mobile_base/commands/led2', Led, queue_size = 10)
-
-		self.pub_second = rospy.Publisher('/cmd_second', String, queue_size = 10)
-
 		self.pub_sound = rospy.Publisher('/mobile_base/commands/sound', Sound, queue_size = 10)
 		self.pub_twist = rospy.Publisher('/mobile_base/commands/velocity', Twist, queue_size = 5)
 		self.pub_reset_odometry = rospy.Publisher('/mobile_base/commands/reset_odometry', Empty, queue_size=10)#自己位置初期化
@@ -94,7 +91,9 @@ class Scratch3Connector:
 			self.moving_speed.angular.z = 0.0
 			if(self.get_msg.find('second:') >= 0):
 				second = self.get_msg[self.get_msg.index(',')+8:len(self.get_msg)]
-				begin = rospy.get_time()
+			else:
+				second = 1
+			begin = rospy.get_time()
 			while True:
 				check = rospy.get_time() - begin
 				if check >= float(second):
@@ -113,7 +112,9 @@ class Scratch3Connector:
 			self.moving_speed.angular.z = math.radians(float(word))
 			if(self.get_msg.find('second:') >= 0):
 				second = self.get_msg[self.get_msg.index(',')+8:len(self.get_msg)]
-				begin = rospy.get_time()
+			else:
+				second = 1
+			begin = rospy.get_time()
 			while True:
 				check = rospy.get_time() - begin
 				if check >= float(second):

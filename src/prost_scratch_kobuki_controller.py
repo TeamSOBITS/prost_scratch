@@ -411,7 +411,7 @@ class OdomBaseController:
 						self.pub_retrun_arrive.publish(end)
 		#/odom初期化#確認
 		reset_val = Empty()
-		self.pub_reset_odometry.publish(reset_val)
+		#self.pub_reset_odometry.publish(reset_val)
 		rospy.sleep(0.1)
 		rospy.loginfo("Moving Finished")
 		#ラズパイ側自動git pull確認用コメント--最終確認
