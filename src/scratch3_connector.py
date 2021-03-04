@@ -90,7 +90,7 @@ class Scratch3Connector:
 				word = 50
 			if float(word) < -50:
 				word = -50
-			self.moving_speed.linear.x = float(word) * 0.01
+			self.moving_speed.linear.x = float(word)
 			self.moving_speed.angular.z = 0.0
 			if(self.get_msg.find('second:') >= 0):
 				second = self.get_msg[self.get_msg.index(',')+8:len(self.get_msg)]
