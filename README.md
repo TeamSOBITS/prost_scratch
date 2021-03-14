@@ -18,7 +18,7 @@ sudo gedit ~/.bashrc
 alias ps-ssh='cssh pi-ps@192.168.1.10 pi-ps@192.168.1.20 pi-ps@192.168.1.30 pi-ps@192.168.1.40 pi-ps@192.168.1.50 pi-ps@192.168.1.60'
 ```
 
-## WifiとすべてのTurtleBotの電源を入れる（OSが立ち上がるまで30秒ほど待つ。）
+### WifiとすべてのTurtleBotの電源を入れる（OSが立ち上がるまで30秒ほど待つ。）
 
 ## clustersshを起動（最初はturtlebotに接続するかどうか(yes or no)、パスワードの入力を要求される。）
 
