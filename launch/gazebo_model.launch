@@ -10,7 +10,7 @@
   <node name="web_video_server" pkg="web_video_server" type="web_video_server" output="screen"/>
 
 	<!-- wifi_connect -->
-	<node name="wifi_connect" pkg="prost_scratch" type="wifi_connect.py" output="screen"/>
+	<node name="wifi_connect_sim" pkg="prost_scratch" type="wifi_connect_sim.py" output="screen"/>
 
 	<!-- text_to_speech -->
 	<include file="$(find text_to_speech)/launch/tts_open_jtalk.launch"/>
