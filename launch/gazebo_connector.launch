@@ -10,10 +10,10 @@
   <node name="web_video_server" pkg="web_video_server" type="web_video_server" output="screen"/>
 
 	<!-- wifi_connect -->
-	<node name="wifi_connect" pkg="prost_scratch" type="wifi_connect.py" output="screen"/>
+	<node name="wifi_connect" pkg="prost_scratch" type="wifi_connect_sim.py" output="screen"/>
 
 	<!-- text_to_speech -->
-	<include file="$(find text_to_speech)/launch/tts_open_jtalk.launch"/>
+	<include file="$(find text_to_speech)/launch/japanese.launch"/>
 
 	<!-- julius_ros -->
 	<include file="$(find julius_ros)/launch/speech_recognition.launch"/>
@@ -26,7 +26,5 @@
 
 	<!-- for_prosta_competition -->
 	<include file="$(find prost_scratch)/launch/for_prosta_competition.launch"/>
-
-
 
 </launch>
