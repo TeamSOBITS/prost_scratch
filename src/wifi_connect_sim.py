@@ -12,10 +12,6 @@ from std_msgs.msg import Bool
 if __name__ == "__main__":
     rospy.init_node('wifi_connect')
     rospy.loginfo("wifi connect check Started")
-    #IP = "192.168.1."#接続を確認したいIP設定
-    #IP = "192.168.11."#テスト用 (F710_5G)
-    #IP = "172.23.139."#テスト用 (SOKA30WL)
-    #IP = "192.168.0."#接続を確認したいIP設定(家)
     IP = "1"#シミュレーション用万能設定
     connect_state = Bool()
     node_kill_flag = False
@@ -28,12 +24,10 @@ if __name__ == "__main__":
             	node_run = Popen(["roslaunch","rosbridge_server","rosbridge_websocket.launch"])
             	rospy.sleep(3)
             	node_kill_flag = False
-            #print "ok"
             connect_state.data = True
             pub_wifi_connect.publish(connect_state)
             rospy.sleep(1)
         else:
-            #print "no"
             connect_state.data = False
             pub_wifi_connect.publish(connect_state)
             node_kill_flag = True

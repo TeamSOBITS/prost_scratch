@@ -24,12 +24,10 @@ if __name__ == "__main__":
             	node_run = Popen(["roslaunch","rosbridge_server","rosbridge_websocket.launch"])
             	rospy.sleep(3)
             	node_kill_flag = False
-            #print "ok"
             connect_state.data = True
             pub_wifi_connect.publish(connect_state)
             rospy.sleep(1)
         else:
-            #print "no"
             connect_state.data = False
             pub_wifi_connect.publish(connect_state)
             node_kill_flag = True

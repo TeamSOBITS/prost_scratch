@@ -119,11 +119,11 @@ class OdomBaseController:
 		#rospy.loginfo("move_order_T: %s" % (self.move_order_T))
 		#rospy.loginfo("move_order_S: %s" % (self.move_order_S))
 		if self.move_order_T == True or self.move_order_S == True:
-			rospy.loginfo("Sorry,I can't do it.")
+			rospy.loginfo("Sorry, the action is not registered.")
 			return "False"
 		check = self.Check_Command(motion)
 		if check == False:
-			rospy.loginfo("The command is fail.")
+			rospy.loginfo("The command cannot be carried out.")
 			return "False"
 		else:
 			if "T" in motion.data:
@@ -186,6 +186,9 @@ class OdomBaseController:
 			send_cmd = Twist()#メッセージ変数の宣言
 			#rospy.loginfo("move_order_T: %s" % (self.move_order_T))
 			#rospy.loginfo("move_order_S: %s" % (self.move_order_S))
+
+
+##########################################################################################################################################
 			if self.move_order_T == False and self.move_order_S == False:
 				#rospy.loginfo("move order flag False")
 				self.pub_twist.publish(Twist())#停止
@@ -240,6 +243,8 @@ class OdomBaseController:
 
 				#print('speed:' + str(self.speed))
 
+
+##########################################################################################################################################
 				if self.move_order_T == True and self.move_order_S == False:
 					if self.order_vale > 0:
 						send_cmd.angular.z = math.radians(-self.speed)
@@ -326,6 +331,9 @@ class OdomBaseController:
 						end = String()
 						end.data = "move end"
 						self.pub_retrun_arrive.publish(end)
+
+
+##########################################################################################################################################
 				elif self.move_order_T == False and self.move_order_S == True:
 					if self.order_vale > 0:
 						send_cmd.linear.x = self.speed #m/sec
