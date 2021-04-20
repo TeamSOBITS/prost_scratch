@@ -22,7 +22,7 @@
 	<node name="prost_scratch_kobuki_controller" pkg="prost_scratch" type="prost_scratch_kobuki_controller.py" output="screen"/>
 
 	<!-- tracklive_usb -->
-	<include file="$(find prost_scratch)/launch/tracklive_usb.launch"/>
+	<!-- <include file="$(find prost_scratch)/launch/tracklive_usb.launch"/> -->
 
 	<!-- for_prosta_competition -->
 	<include file="$(find prost_scratch)/launch/for_prosta_competition.launch"/>

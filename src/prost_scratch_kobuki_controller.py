@@ -129,7 +129,7 @@ class OdomBaseController:
 			if "T" in motion.data:
 				self.order_vale = self.Read_Value(motion)
 				self.move_order_T = True
-				rospy.loginfo("order: Trun: %f(deg)" % (self.order_vale))
+				rospy.loginfo("order: Turn: %f(deg)" % (self.order_vale))
 				#注意：描画するとループ周期が長くなる
 				#グラフ描画準備①
 				"""
@@ -140,7 +140,7 @@ class OdomBaseController:
 				plt.ylabel("speed[rad/sec]")
 				"""
 			elif "S" in motion.data:
-				self.order_vale = self.Read_Value(motion)#cm
+				self.order_vale = self.Read_Value(motion) * 0.01#cm
 				self.move_order_S = True
 				rospy.loginfo("order: Straight: %f(cm)" % (self.order_vale))
 				#グラフ描画準備①
@@ -300,7 +300,7 @@ class OdomBaseController:
 						self.pub_twist.publish(Twist())#停止
 						all_time = time.time() - self.start_measurement_time
 						#print(" ")
-						#print ("総回転時間 :"+ str(all_time) + "[sec]")
+						print ("総回転時間 :"+ str(all_time) + "[sec]")
 						#print(" ")
 						#台形制御のグラフの保存
 						"""
@@ -387,7 +387,7 @@ class OdomBaseController:
 						#rospy.loginfo("速度更新周期: %f[sec]"%(self.period_time))
 						all_time = time.time() - self.start_measurement_time
 						#print(" ")
-						#print ("総移動時間:"+ str(all_time) + "[sec]")
+						print ("総移動時間:"+ str(all_time) + "[sec]")
 						#print(" ")
 						#台形制御のグラフの保存
 						"""
