@@ -140,7 +140,7 @@ class OdomBaseController:
 				plt.ylabel("speed[rad/sec]")
 				"""
 			elif "S" in motion.data:
-				self.order_vale = self.Read_Value(motion) * 0.01#cm
+				self.order_vale = self.Read_Value(motion)#cm
 				self.move_order_S = True
 				rospy.loginfo("order: Straight: %f(cm)" % (self.order_vale))
 				#グラフ描画準備①
