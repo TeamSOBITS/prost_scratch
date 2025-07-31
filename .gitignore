@@ -1,3 +1,32 @@
 legacy
 not_used
 src/wifi_connect.py
+
+# ROS1 build artifacts
+build/
+devel/
+
+# ROS2 build artifacts
+build/
+install/
+log/
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# IDE artifacts
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test artifacts
+.pytest_cache/
+
+# Log files
+*.log
